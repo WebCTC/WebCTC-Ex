@@ -1,0 +1,197 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border: none;
+}
+
+#main {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    overflow: hidden;
+}
+
+#header {
+    background-color: #3D3D3D;
+    position: absolute;
+    overflow: visible;
+    width: 100%;
+    height: 80px;
+}
+
+#logo {
+    position: absolute;
+    width: 217px;
+    height: 62px;
+    left: 9px;
+    top: 9px;
+    overflow: visible;
+}
+
+#base {
+    fill: white;
+}
+
+.base {
+    overflow: visible;
+    position: absolute;
+    width: 217px;
+    height: 62px;
+    left: 0px;
+    top: 0px;
+    transform: matrix(1, 0, 0, 1, 0, 0);
+}
+
+#text {
+    fill: darkslategray;
+}
+
+.text {
+    overflow: visible;
+    position: absolute;
+    width: 190.057px;
+    height: 51px;
+    left: 13.472px;
+    top: 5.5px;
+    transform: matrix(1, 0, 0, 1, 0, 0);
+}
+
+#map {
+    background-color: darkslategray;
+    position: absolute;
+    overflow: hidden;
+    width: calc(100% / 3);
+    height: calc(100% - 80px);
+    left: 0px;
+    top: 80px;
+}
+
+#rg {
+    background-color: whitesmoke;
+    position: absolute;
+    overflow: hidden;
+    width: calc(100% / 3);
+    height: calc(100% - 80px);
+    left: calc(100% / 3);
+    top: 80px;
+    overflow-y: auto;
+}
+
+#editor {
+    background-color: silver;
+    position: absolute;
+    overflow: hidden;
+    width: calc(100% / 3);
+    height: calc(100% - 80px);
+    left: calc(100% / 3 * 2);
+    top: 80px;
+    overflow-y: auto;
+}
+
+#rg_list {
+    margin: 15px 10px auto 10px;
+}
+
+li {
+    cursor: pointer
+}
+
+li:hover {
+    background-color: lightblue;
+    transition: background-color .15s;
+}
+
+summary {
+    list-style: none;
+}
+
+summary::-webkit-details-marker {
+    display: none;
+}
+
+[id^='rail,'] {
+    cursor: pointer
+}
+
+[id^='rail,']:hover {
+    stroke: lightblue;
+    transition: stroke .15s;
+}
+
+.setting-form {
+    margin: 18px 15px auto 15px;
+    font-size: 15pt;
+}
+
+.ex-list-item {
+    display: flex;
+    justify-content: space-between;
+    height: 45px;
+}
+
+.ex-list-item-span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ex-button {
+    width: 65px;
+    height: 27px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ex-c-text {
+    font-size: 30pt;
+    font-weight: bold;
+    margin: 10px auto 0 30px;
+    display: block;
+}
+
+.ex-cord-input {
+    width: 100px;
+    text-align: center;
+    background-color: whitesmoke;
+    justify-content: center;
+    align-items: center;
+}
+
+.ex-s-b-button {
+    margin-top: 30px;
+    width: 100px;
+}
+
+.ex-add-button {
+    margin: 3px 17.5px auto auto
+}
+
+.ex-add-base {
+    display: flex;
+    justify-content: space-between;
+    height: 25px;
+}
+
+.ex-rg-h {
+    display: flex;
+    justify-content: space-between;
+    height: 40px;
+}
+
+.nodisplay {
+    display: none;
+}
+
+.list-group-item:not([style='display:none;']):first-child {
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+.list-group-item:not([style='display:none;']):last-child {
+    border-bottom-right-radius: inherit;
+    border-bottom-left-radius: inherit;
+}

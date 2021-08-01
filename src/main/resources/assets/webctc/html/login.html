@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8"/>
+    <title>WebCTCEx Login</title>
+    <style>
+        @import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300);
+    </style>
+</head>
+
+<body>
+<div>
+    <form class="form" action="ex/login" method="post">
+        <div>
+            <input type="text" placeholder="Minecraft ID" id="id" name="id" required pattern="[a-zA-Z0-9_-_]{3,16}"/>
+        </div>
+
+        <div>
+            <input type="password" placeholder="Password" id="password" name="password" required autocomplete="off"
+                   pattern="[0-9]{6}"/>
+        </div>
+
+        <button type="submit">Login</button>
+    </form>
+</div>
+</body>
+
+</html>
