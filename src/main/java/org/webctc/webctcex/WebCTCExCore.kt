@@ -12,6 +12,7 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.world.WorldSavedData
 import org.webctc.router.RouterManager
 import org.webctc.webctcex.auth.LoginManager
+import org.webctc.webctcex.command.CommandRailGroup
 import org.webctc.webctcex.command.CommandWebCTCEx
 import org.webctc.webctcex.router.ExRouter
 import org.webctc.webctcex.router.RailGroupRouter
@@ -51,6 +52,7 @@ class WebCTCExCore {
         this.railGroupData = railGroupData
 
         event.registerServerCommand(CommandWebCTCEx())
+        event.registerServerCommand(CommandRailGroup())
         LoginManager.clear()
     }
 
