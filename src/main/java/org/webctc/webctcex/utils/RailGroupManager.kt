@@ -6,6 +6,7 @@ import net.minecraft.nbt.NBTTagList
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.WorldSavedData
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 
 class RailGroupManager(mapName: String) : WorldSavedData(mapName) {
     override fun readFromNBT(nbt: NBTTagCompound) {
@@ -24,7 +25,7 @@ class RailGroupManager(mapName: String) : WorldSavedData(mapName) {
 
 
     companion object {
-        val railGroupList = mutableListOf<RailGroup>()
+        val railGroupList = CopyOnWriteArrayList<RailGroup>()
 
         @JvmStatic
         fun setSignal(uuid: UUID, signal: Int) {

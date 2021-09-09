@@ -5,12 +5,13 @@ import net.minecraft.nbt.NBTTagList
 import org.webctc.cache.Pos
 import org.webctc.cache.rail.RailCacheData
 import java.util.*
+import java.util.concurrent.CopyOnWriteArraySet
 
 class RailGroup {
     private var name = "Default Name"
     val uuid: UUID
-    val railPosList = mutableSetOf<Pos>()
-    val rsPosList = mutableSetOf<Pos>()
+    val railPosList = CopyOnWriteArraySet<Pos>()
+    val rsPosList = CopyOnWriteArraySet<Pos>()
 
     private constructor() {
         this.uuid = UUID.randomUUID()
