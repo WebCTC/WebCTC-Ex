@@ -5,33 +5,13 @@ const RAIL_GROUP_BASE_URL = '/api/railgroups/'
 
 document.addEventListener('DOMContentLoaded', () => {
     let svg = document.getElementById('map');
-    svg.onwheel = (event) => {
-        let viewBoxValues = svg.getAttribute("viewBox").split(" ");
-        let scale = event.deltaY > 0 ? 1.1 : 0.9
-        globalScale = globalScale * scale
-        svg.setAttribute("viewBox",
-            viewBoxValues[0] + " " +
-            viewBoxValues[1] + " " +
-            Number(viewBoxValues[2]) * scale + " " +
-            Number(viewBoxValues[3]) * scale + " "
-        )
+
+    try {
+        setupViewBoxEvents(svg)
+    } catch (e) {
+        legacyViewBoxChanger(svg)
     }
 
-    let onMouseMove = (event) => {
-        let x = event.movementX;
-        let y = event.movementY;
-        let viewBoxValues = svg.getAttribute("viewBox").split(" ");
-        svg.setAttribute("viewBox",
-            (Number(viewBoxValues[0]) - x * globalScale) + " " +
-            (Number(viewBoxValues[1]) - y * globalScale) + " " +
-            viewBoxValues[2] + " " +
-            viewBoxValues[3] + " "
-        )
-    }
-
-    svg.ondragstart = () => false;
-    svg.onmousedown = () => document.addEventListener("mousemove", onMouseMove);
-    svg.onmouseup = () => document.removeEventListener("mousemove", onMouseMove);
     svg.onclick = e => selectRail(e.target.parentElement)
 
     document.onkeydown = event => {
@@ -333,4 +313,34 @@ function sortRailGroup() {
     $('#rg_list').each(function () {
         return $(this).html($(this).find('li').sort((a, b) => $(a).text() > $(b).text() ? 1 : -1));
     });
+}
+
+function legacyViewBoxChanger(svg) {
+    svg.onwheel = (event) => {
+        let viewBoxValues = svg.getAttribute("viewBox").split(" ");
+        let scale = event.deltaY > 0 ? 1.1 : 0.9
+        globalScale = globalScale * scale
+        svg.setAttribute("viewBox",
+            viewBoxValues[0] + " " +
+            viewBoxValues[1] + " " +
+            Number(viewBoxValues[2]) * scale + " " +
+            Number(viewBoxValues[3]) * scale + " "
+        )
+    }
+
+    let onMouseMove = (event) => {
+        let x = event.movementX;
+        let y = event.movementY;
+        let viewBoxValues = svg.getAttribute("viewBox").split(" ");
+        svg.setAttribute("viewBox",
+            (Number(viewBoxValues[0]) - x * globalScale) + " " +
+            (Number(viewBoxValues[1]) - y * globalScale) + " " +
+            viewBoxValues[2] + " " +
+            viewBoxValues[3] + " "
+        )
+    }
+
+    svg.ondragstart = () => false;
+    svg.onmousedown = () => document.addEventListener("mousemove", onMouseMove);
+    svg.onmouseup = () => document.removeEventListener("mousemove", onMouseMove);
 }
