@@ -44,5 +44,15 @@ class RailGroupManager(mapName: String) : WorldSavedData(mapName) {
         fun setSignal(uuid: String, signal: Int) {
             setSignal(UUID.fromString(uuid), signal)
         }
+
+        @JvmStatic
+        fun isTrainOnRail(uuid: UUID): Boolean {
+            return railGroupList.find { it.uuid == uuid }?.isTrainOnRail() ?: false
+        }
+
+        @JvmStatic
+        fun isTrainOnRail(uuid: String): Boolean {
+            return isTrainOnRail(UUID.fromString(uuid))
+        }
     }
 }
