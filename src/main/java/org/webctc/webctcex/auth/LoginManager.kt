@@ -2,10 +2,12 @@ package org.webctc.webctcex.auth
 
 import net.minecraft.entity.player.EntityPlayerMP
 import java.security.SecureRandom
+import java.util.*
 
 class LoginManager {
     companion object {
         private val otpList = mutableMapOf<String, String>()
+        private val keyList = mutableListOf<String>()
 
         fun createOTP(player: EntityPlayerMP): String {
             val otp = getRandomPassword()
@@ -18,6 +20,16 @@ class LoginManager {
                 .firstNotNullOfOrNull { if (it.key.equals(id, true) && it.value == otp) it.key else null }
             otpList.remove(name)
             return name
+        }
+
+        fun createRandomKey(): String {
+            val key = UUID.randomUUID().toString();
+            keyList.add(key)
+            return key
+        }
+
+        fun useKey(key: String): Boolean {
+            return keyList.remove(key)
         }
 
         fun clear() = otpList.clear()

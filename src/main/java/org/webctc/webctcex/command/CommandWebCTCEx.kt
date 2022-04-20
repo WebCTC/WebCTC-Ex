@@ -29,13 +29,10 @@ class CommandWebCTCEx : CommandBase() {
         if (sender is EntityPlayerMP) {
             sender.addChatMessage(ChatComponentText(("[WebCTCEx] Access granted!")))
             val text = ChatComponentText("URL: ")
-            val url = ChatComponentText(WebCTCConfig.getURL() + ":" + WebCTCConfig.getPort() + "/login.html")
+            val url = ChatComponentText(WebCTCConfig.getURL() + ":" + WebCTCConfig.getPort() + "/ex/login?key=" + LoginManager.createRandomKey())
             url.chatStyle.chatClickEvent = ClickEvent(ClickEvent.Action.OPEN_URL, url.chatComponentText_TextValue)
             text.appendSibling(url)
             sender.addChatMessage(text)
-
-            val password = LoginManager.createOTP(sender)
-            sender.addChatMessage(ChatComponentText(("OTP: $password")))
         } else {
             sender.addChatMessage(ChatComponentText(("[WebCTCEx] Sorry! This command can only be executed by player.")))
         }

@@ -33,6 +33,21 @@ class ExRouter : WebCTCRouter() {
             }
         }
 
+        get("/login") { req, res ->
+            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
+            if (sessionCookie.data == null) {
+                val key = req.getQuery("key")
+                if (key != null && LoginManager.useKey(key)) {
+                    sessionCookie.data = ""
+                    res.redirect("railgroup")
+                } else {
+                    res.send("Login failed!")
+                }
+            } else {
+                res.redirect("railgroup")
+            }
+        }
+
         all("/logout") { req, res ->
             val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
             if (sessionCookie.data != null) {
