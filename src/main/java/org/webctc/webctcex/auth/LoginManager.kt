@@ -7,7 +7,7 @@ import java.util.*
 class LoginManager {
     companion object {
         private val otpList = mutableMapOf<String, String>()
-        private val keyList = mutableListOf<String>()
+        private val keyList = mutableMapOf<String, String>()
 
         fun createOTP(player: EntityPlayerMP): String {
             val otp = getRandomPassword()
@@ -22,13 +22,13 @@ class LoginManager {
             return name
         }
 
-        fun createRandomKey(): String {
-            val key = UUID.randomUUID().toString();
-            keyList.add(key)
+        fun createRandomKey(name: String): String {
+            val key = UUID.randomUUID().toString()
+            keyList[key] = name
             return key
         }
 
-        fun useKey(key: String): Boolean {
+        fun useKey(key: String): String? {
             return keyList.remove(key)
         }
 

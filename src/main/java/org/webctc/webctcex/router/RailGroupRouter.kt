@@ -1,8 +1,12 @@
 package org.webctc.webctcex.router
 
-import express.http.SessionCookie
-import express.utils.MediaType
-import express.utils.Status
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.webctc.cache.Pos
 import org.webctc.router.WebCTCRouter
 import org.webctc.webctcex.WebCTCExCore
@@ -12,88 +16,63 @@ import java.net.URLDecoder
 import java.util.*
 
 class RailGroupRouter : WebCTCRouter() {
-    init {
 
-        get("/") { req, res ->
-            res.setContentType(MediaType._json)
-            res.setHeader("Access-Control-Allow-Origin", "*")
+    override fun install(application: Route): Route.() -> Unit = {
+        get("/") {
             val json = gson.toJson(RailGroupManager.railGroupList)
-            res.send(json)
+            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+            call.respondText(json)
         }
-
-        get("/railgroup") { req, res ->
-            res.setContentType(MediaType._json)
-            res.setHeader("Access-Control-Allow-Origin", "*")
-            val uuid = req.getQuery("uuid")?.let { UUID.fromString(it) }
+        get("/railgroup") {
+            val uuid = call.request.queryParameters["uuid"]?.let { UUID.fromString(it) }
             val railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
             val json = gson.toJson(railGroup?.toMutableMap())
-            res.send(json)
+            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+            call.respondText(json)
         }
 
-        post("/create") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                res.setContentType(MediaType._json)
-                res.setHeader("Access-Control-Allow-Origin", "*")
+        authenticate("auth-session") {
+            post("/create") {
                 val railGroup = RailGroup.create()
                 val json = gson.toJson(railGroup.toMutableMap())
-                res.send(json)
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.respondText(json)
 
                 WebCTCExCore.INSTANCE.railGroupData.markDirty()
-            } else {
-                res.sendStatus(Status._401)
             }
-        }
-
-        post("/delete") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                res.setContentType(MediaType._json)
-                res.setHeader("Access-Control-Allow-Origin", "*")
-                val uuid = req.getQuery("uuid")?.let { UUID.fromString(it) }
+            post("/delete") {
+                val uuid = call.request.queryParameters["uuid"]?.let { UUID.fromString(it) }
                 val removed = uuid?.let { RailGroup.delete(it) }
                 val json = gson.toJson(mutableMapOf("removed" to removed))
-                res.send(json)
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.respondText(json)
 
                 WebCTCExCore.INSTANCE.railGroupData.markDirty()
-            } else {
-                res.sendStatus(Status._401)
             }
-        }
-
-        post("/update") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                res.setContentType(MediaType._json)
-                res.setHeader("Access-Control-Allow-Origin", "*")
-                val uuid = req.getQuery("uuid")?.let { UUID.fromString(it) }
-                val name = req.getQuery("name")
+            post("/update") {
+                val uuid = call.request.queryParameters["uuid"]?.let { UUID.fromString(it) }
+                val name = call.request.queryParameters["name"]
                 var railGroup: RailGroup? = null
                 if (uuid != null) {
                     railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
                     if (name != null) {
-                        railGroup?.setName(URLDecoder.decode(name, "UTF-8"))
+                        railGroup?.setName(withContext(Dispatchers.IO) {
+                            URLDecoder.decode(name, "UTF-8")
+                        })
                     }
                 }
                 val json = gson.toJson(railGroup?.toMutableMap())
-                res.send(json)
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.respondText(json)
 
                 WebCTCExCore.INSTANCE.railGroupData.markDirty()
-            } else {
-                res.sendStatus(Status._401)
             }
-        }
-
-        post("/add") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                res.setContentType(MediaType._json)
-                res.setHeader("Access-Control-Allow-Origin", "*")
-                val uuid = req.getQuery("uuid")?.let { UUID.fromString(it) }
-                val x = req.getQuery("x")?.toIntOrNull()
-                val y = req.getQuery("y")?.toIntOrNull()
-                val z = req.getQuery("z")?.toIntOrNull()
-                val rs = req.getQuery("rs").toBoolean()
+            post("/add") {
+                val uuid = call.request.queryParameters["uuid"]?.let { UUID.fromString(it) }
+                val x = call.request.queryParameters["x"]?.toIntOrNull()
+                val y = call.request.queryParameters["y"]?.toIntOrNull()
+                val z = call.request.queryParameters["z"]?.toIntOrNull()
+                val rs = call.request.queryParameters["rs"].toBoolean()
                 var railGroup: RailGroup? = null
                 if (uuid != null && x != null && y != null && z != null) {
                     railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
@@ -105,24 +84,17 @@ class RailGroupRouter : WebCTCRouter() {
                     }
                 }
                 val json = gson.toJson(railGroup?.toMutableMap())
-                res.send(json)
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.respondText(json)
 
                 WebCTCExCore.INSTANCE.railGroupData.markDirty()
-            } else {
-                res.sendStatus(Status._401)
             }
-        }
-
-        post("/remove") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                res.setContentType(MediaType._json)
-                res.setHeader("Access-Control-Allow-Origin", "*")
-                val uuid = req.getQuery("uuid")?.let { UUID.fromString(it) }
-                val x = req.getQuery("x")?.toIntOrNull()
-                val y = req.getQuery("y")?.toIntOrNull()
-                val z = req.getQuery("z")?.toIntOrNull()
-                val rs = req.getQuery("rs").toBoolean()
+            post("/remove") {
+                val uuid = call.request.queryParameters["uuid"]?.let { UUID.fromString(it) }
+                val x = call.request.queryParameters["x"]?.toIntOrNull()
+                val y = call.request.queryParameters["y"]?.toIntOrNull()
+                val z = call.request.queryParameters["z"]?.toIntOrNull()
+                val rs = call.request.queryParameters["rs"].toBoolean()
                 var railGroup: RailGroup? = null
                 if (uuid != null && x != null && y != null && z != null) {
                     railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
@@ -134,21 +106,14 @@ class RailGroupRouter : WebCTCRouter() {
                     }
                 }
                 val json = gson.toJson(railGroup?.toMutableMap())
-                res.send(json)
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.respondText(json)
 
                 WebCTCExCore.INSTANCE.railGroupData.markDirty()
-            } else {
-                res.sendStatus(Status._401)
             }
-        }
-
-        post("/clear") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                res.setContentType(MediaType._json)
-                res.setHeader("Access-Control-Allow-Origin", "*")
-                val uuid = req.getQuery("uuid")?.let { UUID.fromString(it) }
-                val rs = req.getQuery("rs").toBoolean()
+            post("/clear") {
+                val uuid = call.request.queryParameters["uuid"]?.let { UUID.fromString(it) }
+                val rs = call.request.queryParameters["rs"].toBoolean()
                 var railGroup: RailGroup? = null
                 if (uuid != null) {
                     railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
@@ -159,11 +124,10 @@ class RailGroupRouter : WebCTCRouter() {
                     }
                 }
                 val json = gson.toJson(railGroup?.toMutableMap())
-                res.send(json)
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.respondText(json)
 
                 WebCTCExCore.INSTANCE.railGroupData.markDirty()
-            } else {
-                res.sendStatus(Status._401)
             }
         }
     }

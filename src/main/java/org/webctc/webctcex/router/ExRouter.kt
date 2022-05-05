@@ -1,98 +1,51 @@
 package org.webctc.webctcex.router
 
-import express.http.SessionCookie
-import express.http.response.Response
-import express.middleware.Middleware
-import express.utils.MediaType
-import express.utils.Status
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
 import jp.ngt.ngtlib.io.NGTFileLoader
 import net.minecraft.util.ResourceLocation
 import org.webctc.WebCTCCore
 import org.webctc.router.WebCTCRouter
+import org.webctc.webctcex.WebCTCExCore
 import org.webctc.webctcex.auth.LoginManager
 
 
 class ExRouter : WebCTCRouter() {
-    init {
-        use(Middleware.cookieSession("jwyyLID3sG", 9000))
-
-        post("/login") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data == null) {
-                val id = req.getFormQuery("id")
-                val password = req.getFormQuery("password")
-                val player = LoginManager.getPlayer(id, password)
-                if (player == null) {
-                    res.send("Login failed!")
-                } else {
-                    sessionCookie.data = player
-                    res.redirect("railgroup")
+    override fun install(application: Route): Route.() -> Unit = {
+        get("/login") {
+            call.request.queryParameters["key"]?.let {
+                LoginManager.useKey(it)?.let { name ->
+                    call.sessions.set(WebCTCExCore.UserSession(name))
+                    call.respondRedirect("/ex/railgroup")
+                    return@get
                 }
-            } else {
-                res.redirect("railgroup")
             }
+            call.respondText("Login failed", ContentType.Text.Plain)
         }
 
-        get("/login") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data == null) {
-                val key = req.getQuery("key")
-                if (key != null && LoginManager.useKey(key)) {
-                    sessionCookie.data = ""
-                    res.redirect("railgroup")
-                } else {
-                    res.send("Login failed!")
-                }
-            } else {
-                res.redirect("railgroup")
+        authenticate("auth-session") {
+            get("/logout") {
+                call.sessions.clear<WebCTCExCore.UserSession>()
+                call.respondRedirect("/ex/login")
             }
-        }
-
-        all("/logout") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                sessionCookie.data = null
+            get("/railgroup") {
+                call.respondResourceLocatedFile("railgroup.html", ContentType.Text.Html)
             }
-            res.redirect("../login.html")
-        }
-
-        get("/railgroup") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                this.sendFile("railgroup.html", res, MediaType._html)
-            } else {
-                res.setStatus(Status._401)
-                res.redirect("../login.html")
+            get("/railgroup.js") {
+                call.respondResourceLocatedFile("railgroup.js", ContentType.Text.JavaScript)
             }
-        }
-
-        get("/railgroup.js") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                this.sendFile("railgroup.js", res, MediaType._css)
-            } else {
-                res.setStatus(Status._401)
-                res.redirect("../login.html")
-            }
-        }
-
-        get("/stylesheet.css") { req, res ->
-            val sessionCookie = req.getMiddlewareContent("sessioncookie") as SessionCookie
-            if (sessionCookie.data != null) {
-                this.sendFile("stylesheet.css", res, MediaType._css)
-            } else {
-                res.setStatus(Status._401)
-                res.redirect("../login.html")
+            get("/stylesheet.css") {
+                call.respondResourceLocatedFile("stylesheet.css", ContentType.Text.CSS)
             }
         }
     }
 
-    private fun sendFile(fileName: String, res: Response, mediaType: MediaType) {
-        try {
-            val inputStream = NGTFileLoader.getInputStream(ResourceLocation(WebCTCCore.MODID, "html/ex/$fileName"))
-            res.streamFrom(0, inputStream, mediaType)
-        } catch (e: Exception) {
-            res.sendStatus(Status._401)
-        }
+    private suspend fun ApplicationCall.respondResourceLocatedFile(fileName: String, contentType: ContentType) {
+        val inputStream = NGTFileLoader.getInputStream(ResourceLocation(WebCTCCore.MODID, "html/ex/$fileName"))
+        this.respondText(inputStream.bufferedReader().readText(), contentType)
     }
 }

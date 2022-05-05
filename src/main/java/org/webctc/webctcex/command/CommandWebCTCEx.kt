@@ -29,7 +29,7 @@ class CommandWebCTCEx : CommandBase() {
         if (sender is EntityPlayerMP) {
             sender.addChatMessage(ChatComponentText(("[WebCTCEx] Access granted!")))
             val text = ChatComponentText("URL: ")
-            val url = ChatComponentText(WebCTCConfig.getURL() + ":" + WebCTCConfig.getPort() + "/ex/login?key=" + LoginManager.createRandomKey())
+            val url = ChatComponentText(WebCTCConfig.getURL() + ":" + WebCTCConfig.getPort() + "/ex/login?key=" + LoginManager.createRandomKey(sender.commandSenderName))
             url.chatStyle.chatClickEvent = ClickEvent(ClickEvent.Action.OPEN_URL, url.chatComponentText_TextValue)
             text.appendSibling(url)
             sender.addChatMessage(text)

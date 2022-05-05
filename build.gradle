@@ -1,5 +1,6 @@
 buildscript {
-    ext.kotlin_version = '1.5.30'
+    ext.kotlin_version = '1.6.0'
+    ext.ktor_version = '2.0.0'
     repositories {
         mavenCentral()
         maven {
@@ -19,8 +20,16 @@ buildscript {
     }
 }
 
+configurations {
+    embed
+    api.extendsFrom(embed)
+}
+
 apply plugin: 'forge'
 apply plugin: 'kotlin'
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 version = "1.7.10-SNAPSHOT"
 group = "org.webctc.webctcex" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
@@ -32,7 +41,6 @@ minecraft {
 }
 
 repositories {
-    ext.kotlin_version = '1.5.0'
     jcenter()
     mavenCentral()
     maven { url "https://www.cursemaven.com" }
@@ -53,9 +61,10 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    implementation 'org.jetbrains:annotations:22.0.0'
-    implementation 'com.github.WebCTC:WebCTC:1.7.10-SNAPSHOT'
+    api 'com.github.WebCTC:WebCTC:1.7-SNAPSHOT'
+
+    embed "io.ktor:ktor-server-auth:$ktor_version"
+    embed "io.ktor:ktor-server-sessions:$ktor_version"
 
 }
 
@@ -86,6 +95,12 @@ task sourcesJar(type: Jar) {
 }
 
 jar {
+    configurations.embed.each { dep ->
+        from(project.zipTree(dep)) {
+            include 'org/webctc/', 'io/ktor/server/auth/', 'io/ktor/server/sessions/', 'kotlin/reflect/'
+        }
+    }
+
     from(rootDir) {
         include 'README.md'
         include 'LICENSE'
@@ -101,6 +116,3 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8
     kotlinOptions.javaParameters = true
 }
-
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
