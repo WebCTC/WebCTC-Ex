@@ -14,6 +14,7 @@ import io.ktor.server.sessions.*
 import net.minecraft.init.Blocks
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.WorldSavedData
+import net.minecraftforge.common.MinecraftForge
 import org.webctc.plugin.PluginManager
 import org.webctc.router.RouterManager
 import org.webctc.webctcex.auth.LoginManager
@@ -37,6 +38,8 @@ class WebCTCExCore {
     @Mod.EventHandler
     fun preInit(event: FMLPreInitializationEvent) {
         FMLCommonHandler.instance().bus().register(this)
+        FMLCommonHandler.instance().bus().register(WebCTCExEventHandler())
+        MinecraftForge.EVENT_BUS.register(WebCTCExEventHandler())
     }
 
     data class UserSession(val name: String) : Principal

@@ -1,14 +1,13 @@
 let currentRailElems = [];
 let key_shift;
 
-const RAIL_GROUP_BASE_URL = '/api/railgroups/'
+const RAIL_GROUP_BASE_URL = `${protocol}//${host}/api/railgroups/`
 
 document.addEventListener('DOMContentLoaded', async () => {
   let svg = document.getElementById('map');
   let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   svg.appendChild(g);
   try {
-    await updateRail(g)
     await updateRail(g)
   } catch (e) {
     alert("Error!" + "\n" + e);
@@ -32,6 +31,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     .then(() => sortRailGroup())
 
   panzoom(g)
+
+  let ws;
+  $(() => {
+    $('.js-open').click(() => {
+      let uuid = $("#rg_uuid").val()
+      if (!uuid) {
+        return;
+      }
+      $('#overlay, .modal-window').fadeIn();
+      ws = new WebSocket(`ws://${host}/api/railgroups/BlockPosConnection`);
+      ws.onmessage = event => {
+        let data = JSON.parse(event.data);
+        let li = this.createPosElement(data['x'], data['y'], data['z']);
+        $(li).hide()
+        document.getElementById("modal_pos_list").appendChild(li)
+        $(li).fadeIn()
+      }
+    });
+    $('.js-close').click(() => {
+      ws.close();
+      let list = $("#modal_pos_list")
+      let input = list.find("input")
+      for (let i = 0; i < input.length; i += 3) {
+        let x = input.eq(i).val()
+        let y = input.eq(i + 1).val()
+        let z = input.eq(i + 2).val()
+        this.addPos(x, y, z)
+      }
+      list.empty();
+      $('#overlay, .modal-window').fadeOut()
+    });
+  });
 });
 
 function setRailActive(rail, b) {
@@ -256,6 +287,15 @@ async function selectRail(elem) {
 }
 
 function addPos(xCoord = "", yCoord = "", zCoord = "") {
+  let uuid = document.getElementById("rg_uuid").value
+  if (!uuid) {
+    return;
+  }
+  let li = this.createPosElement(xCoord, yCoord, zCoord)
+  document.getElementById("rs_pos_list").appendChild(li)
+}
+
+function createPosElement(xCoord, yCoord, zCoord) {
   let li = document.createElement("li")
   li.className = "list-group-item ex-list-item"
   let label = document.createElement("label")
@@ -272,9 +312,9 @@ function addPos(xCoord = "", yCoord = "", zCoord = "") {
   let button = document.createElement("button")
   button.className = "btn btn-outline-danger ex-button"
   button.innerText = "Remove"
-  button.onclick = e => removePos(e.target.parentElement)
+  button.onclick = e => li.parentElement.id === "rs_pos_list" ? removePos(e.target.parentElement) : li.remove()
   li.appendChild(button)
-  document.getElementById("rs_pos_list").appendChild(li)
+  return li
 }
 
 function createPosInputElement(placeholder) {

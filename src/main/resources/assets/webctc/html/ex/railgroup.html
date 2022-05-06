@@ -9,13 +9,13 @@
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
     <link rel="stylesheet" type="text/css" id="applicationStylesheet"
-          href="https://cdn.jsdelivr.net/gh/webctc/webctc-ex@0.3.x/src/main/resources/assets/webctc/html/ex/stylesheet.min.css"/>
+          href="stylesheet.css"/>
 
-    <script
-        src="https://cdn.jsdelivr.net/gh/webctc/webctc-ex@0.4.x/src/main/resources/assets/webctc/html/ex/railgroup.js">
+    <script src="map.js">
     </script>
 
-    <script src="https://cdn.jsdelivr.net/gh/webctc/webctc@0.4.x/src/main/resources/assets/webctc/html/map.min.js">
+    <script
+        src="railgroup.js">
     </script>
 
 
@@ -30,6 +30,18 @@
 <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 
 <div id="main">
+    <div id="overlay" class="overlay"></div>
+    <div class="modal-window">
+        <span class="ex-c-text">Minecraft Click Handler</span>
+        <div class="mb-3"></div>
+
+        <ul class="list-group" id="modal_pos_list"
+            style="overflow:auto; height: inherit; width: fit-content; position: fixed; left: 50%; transform: translateX(-50%);">
+        </ul>
+        <button class="button-close btn btn-danger ex-s-b-button js-close">
+            Close
+        </button>
+    </div>
     <div id="header">
         <div id="logo">
             <svg class="base" viewBox="0 0 217 62">
@@ -77,7 +89,7 @@
 
             <div class="mb-3 ex-add-base">
                 <label for="add_rail" class="form-label">Rails</label>
-                <button class="btn btn-success ex-button ex-add-button"
+                <button class="btn btn-success ex-button"
                         id="add_rail"
                         onclick="addRail()">
                     Add
@@ -90,8 +102,14 @@
             <div class="mb-3"></div>
 
             <div class="mb-3 ex-add-base">
-                <label for="add_pos" class="form-label">RedStone Pos</label>
-                <button class="btn btn-info ex-button ex-add-button"
+                <label class="form-label">RedStone Pos</label>
+                <button class="btn btn-info ex-button js-open"
+                        id="receive_rs_pos"
+                        onclick=""
+                        style="margin-left:auto; margin-right:15px">
+                    Receive
+                </button>
+                <button class="btn btn-info ex-button"
                         id="add_pos"
                         onclick="addPos()">
                     Add
