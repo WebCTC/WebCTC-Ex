@@ -169,7 +169,7 @@ suspend fun DefaultWebSocketSession.initPosSetter(itemName: String, playerName: 
         }
         val player: EntityPlayer? = MinecraftServer.getServer().entityWorld.getPlayerEntityByName(playerName)
         if (player != null) {
-            if (!player.inventory.hasItemStack(itemStack)) {
+            if (!player.inventory.mainInventory.all { ItemStack.areItemStacksEqual(it, itemStack) && ItemStack.areItemStackTagsEqual(it, itemStack) }) {
                 player.inventory.addItemStackToInventory(itemStack)
             }
             player.entityWorld.playSoundAtEntity(player, "random.levelup", 1.0f, 1.0f)

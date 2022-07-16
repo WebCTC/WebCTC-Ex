@@ -11,7 +11,7 @@
     <link rel="stylesheet" type="text/css" id="applicationStylesheet"
           href="stylesheet.css"/>
 
-    <script src="map.js">
+    <script src="/map.js">
     </script>
 
     <script
@@ -56,7 +56,13 @@
             </svg>
         </div>
     </div>
-    <svg id="map"></svg>
+    <svg id="map">
+        <g id="mtx">
+            <g id="rails"/>
+            <g id="signals"/>
+            <g id="formations"/>
+        </g>
+    </svg>
     <div id="rg">
         <span class="ex-c-text">RailGroups</span>
         <span class="mb-3" style="display:flex">

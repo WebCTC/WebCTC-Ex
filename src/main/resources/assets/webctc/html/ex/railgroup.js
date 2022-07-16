@@ -5,10 +5,12 @@ const RAIL_GROUP_BASE_URL = `${protocol}//${host}/api/railgroups/`
 
 document.addEventListener('DOMContentLoaded', async () => {
   let svg = document.getElementById('map');
-  let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  svg.appendChild(g);
+  let g = document.getElementById('mtx');
   try {
     await updateRail(g)
+    Array.from(document.querySelectorAll("[id^='rail,']")).forEach(rail => {
+      rail.setAttribute('stroke', 'white')
+    })
   } catch (e) {
     alert("Error!" + "\n" + e);
     return;
@@ -30,7 +32,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     .then(json => json.forEach(rg => addRailGroupElement(rg)))
     .then(() => sortRailGroup())
 
-  panzoom(g)
+  panzoom(g, {
+    smoothScroll: false,
+    bounds: true,
+    boundsPadding: 0.1
+  })
 
   let ws;
   $(() => {
