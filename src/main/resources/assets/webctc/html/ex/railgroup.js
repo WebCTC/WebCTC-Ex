@@ -32,11 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     .then(json => json.forEach(rg => addRailGroupElement(rg)))
     .then(() => sortRailGroup())
 
-  panzoom(g, {
-    smoothScroll: false,
-    bounds: true,
-    boundsPadding: 0.1
-  })
+  panzoom(g, {smoothScroll: false})
 
   let ws;
   $(() => {
