@@ -50,10 +50,9 @@ class RailGroup {
     }
 
     fun isTrainOnRail(): Boolean {
-        return RailCacheData.railMapCache
-            .filterKeys { railPosList.contains(it) }
-            .filterValues { it.isTrainOnRail }
-            .any()
+        return railPosList
+            .mapNotNull { RailCacheData.railMapCache[it] }
+            .any { it.isTrainOnRail }
     }
 
     fun writeToNBT(): NBTTagCompound {
