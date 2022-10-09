@@ -301,6 +301,7 @@ function createPosElement(xCoord, yCoord, zCoord) {
   let li = document.createElement("li")
   li.className = "list-group-item ex-list-item"
   let label = document.createElement("label")
+  label.style.minWidth = "300px"
   let x = createPosInputElement("X")
   x.value = xCoord
   label.appendChild(x)
