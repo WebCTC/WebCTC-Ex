@@ -114,13 +114,48 @@
                 </button>
                 <button class="btn btn-info ex-button"
                         id="add_pos"
-                        onclick="addPos()">
+                        onclick="addRedStonePos()">
                     Add
                 </button>
             </div>
 
             <ul class="list-group" id="rs_pos_list">
             </ul>
+
+            <div class="mb-3"></div>
+
+            <div class="mb-3 ex-add-base">
+                <label class="form-label">Display Pos</label>
+                <button class="btn btn-info ex-button js-open"
+                        id="receive_display_pos"
+                        onclick=""
+                        style="margin-left:auto; margin-right:15px">
+                    Receive
+                </button>
+                <button class="btn btn-info ex-button"
+                        id="add_display"
+                        onclick="addDisplayPos()">
+                    Add
+                </button>
+            </div>
+
+            <ul class="list-group" id="display_pos_list">
+            </ul>
+
+            <div class="mb-3"></div>
+
+            <div class="mb-3 ex-add-base">
+                <label class="form-label">Next RailGroup</label>
+                <button class="btn btn-info ex-button"
+                        id="add_railgroup"
+                        onclick="addNextRailGroup()">
+                    Add
+                </button>
+            </div>
+
+            <ul class="list-group" id="next_railgroup_list">
+            </ul>
+
 
             <div class="mb-3" style="display:flex">
                 <button id="update_rg" class="btn btn-primary ex-s-b-button" onclick="sendRailGroup()">

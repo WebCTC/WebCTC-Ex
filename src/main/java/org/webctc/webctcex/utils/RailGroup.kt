@@ -1,7 +1,11 @@
 package org.webctc.webctcex.utils
 
+import jp.ngt.rtm.electric.TileEntitySignal
+import net.minecraft.init.Blocks
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.nbt.NBTTagList
+import net.minecraft.nbt.NBTTagString
+import net.minecraft.server.MinecraftServer
 import org.webctc.cache.Pos
 import org.webctc.cache.rail.RailCacheData
 import java.util.*
@@ -12,6 +16,10 @@ class RailGroup {
     val uuid: UUID
     val railPosList = CopyOnWriteArraySet<Pos>()
     val rsPosList = CopyOnWriteArraySet<Pos>()
+    val nextRailGroupList = CopyOnWriteArraySet<UUID>()
+    val displayPosList = CopyOnWriteArraySet<Pos>()
+
+    var signalLevel = 0
 
     private constructor() {
         this.uuid = UUID.randomUUID()
@@ -49,6 +57,22 @@ class RailGroup {
         this.name = name
     }
 
+    fun addNextRailGroup(uuid: UUID) {
+        this.nextRailGroupList.add(uuid)
+    }
+
+    fun removeNextRailGroup(uuid: UUID) {
+        this.nextRailGroupList.remove(uuid)
+    }
+
+    fun addDisplayPos(pos: Pos) {
+        this.displayPosList.add(pos)
+    }
+
+    fun removeDisplayPos(pos: Pos) {
+        this.displayPosList.remove(pos)
+    }
+
     fun isTrainOnRail(): Boolean {
         return railPosList
             .mapNotNull { RailCacheData.railMapCache[it] }
@@ -66,6 +90,12 @@ class RailGroup {
         val rsPosTagList = NBTTagList()
         rsPosList.forEach { rsPosTagList.appendTag(it.writeToNBT()) }
         tag.setTag("rsPosTagList", rsPosTagList)
+        val nextRailGroupTagList = NBTTagList()
+        nextRailGroupList.forEach { nextRailGroupTagList.appendTag(it.writeToNBT()) }
+        tag.setTag("nextRailGroupTagList", nextRailGroupTagList)
+        val displayPosTagList = NBTTagList()
+        displayPosList.forEach { displayPosTagList.appendTag(it.writeToNBT()) }
+        tag.setTag("displayPosTagList", displayPosTagList)
         return tag
     }
 
@@ -74,8 +104,14 @@ class RailGroup {
             "uuid" to this.uuid,
             "railPosList" to this.railPosList,
             "rsPosList" to this.rsPosList,
-            "name" to this.name
+            "name" to this.name,
+            "nextRailGroupList" to this.nextRailGroupList,
+            "displayPosList" to this.displayPosList
         )
+    }
+
+    fun UUID.writeToNBT(): NBTTagString {
+        return NBTTagString(this.toString())
     }
 
     companion object {
@@ -105,8 +141,37 @@ class RailGroup {
                 .map { rsPosTagList.getCompoundTagAt(it) }
                 .map { Pos.readFromNBT(it) }
                 .forEach { railGroup.addRS(it) }
+            val nextRailGroupTagList = nbt.getTagList("nextRailGroupTagList", 8)
+            (0 until nextRailGroupTagList.tagCount())
+                .map { nextRailGroupTagList.getStringTagAt(it) }
+                .map { UUID.fromString(it) }
+                .forEach { railGroup.addNextRailGroup(it) }
+            val displayPosTagList = nbt.getTagList("displayPosTagList", 10)
+            (0 until displayPosTagList.tagCount())
+                .map { displayPosTagList.getCompoundTagAt(it) }
+                .map { Pos.readFromNBT(it) }
+                .forEach { railGroup.addDisplayPos(it) }
 
             return railGroup
         }
+    }
+
+    fun update() {
+        val isTrainOnRail = this.isTrainOnRail()
+        this.signalLevel = ((if (isTrainOnRail) 0
+        else this.nextRailGroupList.mapNotNull { uuid ->
+            RailGroupManager.railGroupList.find { it.uuid == uuid }
+        }.minOfOrNull {
+            it.signalLevel
+        } ?: 0) + 1).coerceAtMost(6)
+        val world = MinecraftServer.getServer().entityWorld
+        this.displayPosList
+            .map { world.getTileEntity(it.x, it.y, it.z) }
+            .filterIsInstance(TileEntitySignal::class.java)
+            .filter { it.javaClass.fields.find { it.name == "signalLevel" }?.apply { this.isAccessible = true }?.get(it) != this.signalLevel }
+            .forEach { it.setElectricity(it.xCoord, it.yCoord, it.zCoord, this.signalLevel) }
+
+        val block = if (isTrainOnRail) Blocks.redstone_block else Blocks.stained_glass
+        this.rsPosList.forEach { world.setBlock(it.x, it.y, it.z, block, 14, 3) }
     }
 }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Items
+import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.nbt.NBTTagList
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class RailGroupRouter : WebCTCRouter() {
     companion object {
         val blockPosConnection = mutableMapOf<String, Connection?>()
+        val signalPosConnection = mutableMapOf<String, Connection?>()
     }
 
     override fun install(application: Route): Route.() -> Unit = {
@@ -88,16 +90,31 @@ class RailGroupRouter : WebCTCRouter() {
                 val x = call.request.queryParameters["x"]?.toIntOrNull()
                 val y = call.request.queryParameters["y"]?.toIntOrNull()
                 val z = call.request.queryParameters["z"]?.toIntOrNull()
-                val rs = call.request.queryParameters["rs"].toBoolean()
+                val type = call.request.queryParameters["type"]?.toIntOrNull()
                 var railGroup: RailGroup? = null
                 if (uuid != null && x != null && y != null && z != null) {
                     railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
                     val pos = Pos(x, y, z)
-                    if (rs) {
-                        railGroup?.addRS(pos)
-                    } else {
-                        railGroup?.addRail(pos)
+                    when (type) {
+                        0 -> railGroup?.addRail(pos)
+                        1 -> railGroup?.addRS(pos)
+                        2 -> railGroup?.addDisplayPos(pos)
+                        else -> {}
                     }
+                }
+                val json = gson.toJson(railGroup?.toMutableMap())
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.respondText(json)
+
+                WebCTCExCore.INSTANCE.railGroupData.markDirty()
+            }
+            post("/addNextRailGroup") {
+                val uuid = call.request.queryParameters["uuid"]?.let { UUID.fromString(it) }
+                val nextRailGroup = call.request.queryParameters["nextRailGroup"]?.let { UUID.fromString(it) }
+                var railGroup: RailGroup? = null
+                if (uuid != null && nextRailGroup != null) {
+                    railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
+                    railGroup?.addNextRailGroup(nextRailGroup)
                 }
                 val json = gson.toJson(railGroup?.toMutableMap())
                 call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
@@ -110,15 +127,16 @@ class RailGroupRouter : WebCTCRouter() {
                 val x = call.request.queryParameters["x"]?.toIntOrNull()
                 val y = call.request.queryParameters["y"]?.toIntOrNull()
                 val z = call.request.queryParameters["z"]?.toIntOrNull()
-                val rs = call.request.queryParameters["rs"].toBoolean()
+                val type = call.request.queryParameters["type"]?.toIntOrNull()
                 var railGroup: RailGroup? = null
                 if (uuid != null && x != null && y != null && z != null) {
                     railGroup = RailGroupManager.railGroupList.find { it.uuid == uuid }
                     val pos = Pos(x, y, z)
-                    if (rs) {
-                        railGroup?.removeRS(pos)
-                    } else {
-                        railGroup?.removeRail(pos)
+                    when (type) {
+                        0 -> railGroup?.removeRail(pos)
+                        1 -> railGroup?.removeRS(pos)
+                        2 -> railGroup?.removeDisplayPos(pos)
+                        else -> {}
                     }
                 }
                 val json = gson.toJson(railGroup?.toMutableMap())
@@ -147,16 +165,20 @@ class RailGroupRouter : WebCTCRouter() {
             }
             webSocket("/BlockPosConnection") {
                 val name = call.sessions.get<WebCTCExCore.UserSession>()?.name ?: return@webSocket
-                this.initPosSetter("BlockPosSetter", name, blockPosConnection)
+                this.initPosSetter("BlockPosSetter", name, blockPosConnection, Items.stick)
+            }
+            webSocket("/SignalPosConnection") {
+                val name = call.sessions.get<WebCTCExCore.UserSession>()?.name ?: return@webSocket
+                this.initPosSetter("SignalPosSetter", name, signalPosConnection, Items.blaze_rod)
             }
         }
     }
 }
 
-suspend fun DefaultWebSocketSession.initPosSetter(itemName: String, playerName: String, connectionList: MutableMap<String, Connection?>) {
+suspend fun DefaultWebSocketSession.initPosSetter(itemName: String, playerName: String, connectionList: MutableMap<String, Connection?>, item: Item) {
     val thisConnection = Connection(this)
     try {
-        val itemStack = ItemStack(Items.stick).apply {
+        val itemStack = ItemStack(item).apply {
             this.tagCompound = NBTTagCompound().apply {
                 this.setTag("ench", NBTTagList().apply {
                     this.appendTag(NBTTagCompound().apply {
@@ -187,8 +209,8 @@ suspend fun DefaultWebSocketSession.initPosSetter(itemName: String, playerName: 
         }
     } catch (e: Exception) {
         FMLCommonHandler.instance().fmlLogger.error(e.stackTrace.toString())
-        connectionList.remove(playerName, thisConnection)
     }
+    connectionList.remove(playerName, thisConnection)
 }
 
 class Connection(val session: DefaultWebSocketSession) {

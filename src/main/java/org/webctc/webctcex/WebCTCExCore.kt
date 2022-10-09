@@ -11,8 +11,6 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.sessions.*
-import net.minecraft.init.Blocks
-import net.minecraft.server.MinecraftServer
 import net.minecraft.world.WorldSavedData
 import net.minecraftforge.common.MinecraftForge
 import org.webctc.plugin.PluginManager
@@ -91,12 +89,7 @@ class WebCTCExCore {
     @SubscribeEvent
     fun onServerTick(event: TickEvent.ServerTickEvent) {
         if (event.phase == TickEvent.Phase.END) {
-            val world = MinecraftServer.getServer().entityWorld;
-            RailGroupManager.railGroupList.forEach { it ->
-                val isTrainOnRail = it.isTrainOnRail()
-                val block = if (isTrainOnRail) Blocks.redstone_block else Blocks.stained_glass
-                it.rsPosList.forEach { world.setBlock(it.x, it.y, it.z, block, 14, 3) }
-            }
+            RailGroupManager.railGroupList.forEach { it.update() }
         }
     }
 

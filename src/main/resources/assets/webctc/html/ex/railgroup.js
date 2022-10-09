@@ -1,8 +1,8 @@
 let currentRailElems = [];
 let key_shift;
-
 const RAIL_GROUP_BASE_URL = `${protocol}//${host}/api/railgroups/`
 
+var socketName = null
 document.addEventListener('DOMContentLoaded', async () => {
   let svg = document.getElementById('map');
   let g = document.getElementById('mtx');
@@ -36,16 +36,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let ws;
   $(() => {
-    $('.js-open').click(() => {
+    $('.js-open').on('click', function () {
       let uuid = $("#rg_uuid").val()
       if (!uuid) {
         return;
       }
       $('#overlay, .modal-window').fadeIn();
-      ws = new WebSocket(`ws://${host}/api/railgroups/BlockPosConnection`);
+      let id = $(this).attr('id')
+      socketName = id === "receive_rs_pos" ? "BlockPosConnection" : "SignalPosConnection"
+      ws = new WebSocket(`ws://${host}/api/railgroups/${socketName}`);
       ws.onmessage = event => {
         let data = JSON.parse(event.data);
-        let li = this.createPosElement(data['x'], data['y'], data['z']);
+        let li = createPosElement(data['x'], data['y'], data['z'])
         $(li).hide()
         document.getElementById("modal_pos_list").appendChild(li)
         $(li).fadeIn()
@@ -59,7 +61,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         let x = input.eq(i).val()
         let y = input.eq(i + 1).val()
         let z = input.eq(i + 2).val()
-        this.addPos(x, y, z)
+        if (socketName === "BlockPosConnection") {
+          this.addRedStonePos(x, y, z)
+        } else {
+          this.addDisplayPos(x, y, z)
+        }
       }
       list.empty();
       $('#overlay, .modal-window').fadeOut()
@@ -136,7 +142,22 @@ function sendRailGroup() {
     let y = is[1].value
     let z = is[2].value
     if (x && y && z) {
-      postData("add", {"uuid": uuid, "x": x, "y": y, "z": z, "rs": true})
+      postData("add", {"uuid": uuid, "x": x, "y": y, "z": z, "type": 1})
+    }
+  })
+  Array.from(document.getElementById("display_pos_list").children).forEach(li => {
+    let is = li.children[0].children
+    let x = is[0].value
+    let y = is[1].value
+    let z = is[2].value
+    if (x && y && z) {
+      postData("add", {"uuid": uuid, "x": x, "y": y, "z": z, "type": 2})
+    }
+  })
+  Array.from(document.getElementById("next_railgroup_list").children).forEach(li => {
+    let nextRailGroup = li.children[1].value
+    if (nextRailGroup) {
+      postData("addNextRailGroup", {"uuid": uuid, "nextRailGroup": nextRailGroup})
     }
   })
   postData("update", {"uuid": uuid, "name": name})
@@ -195,8 +216,16 @@ function updateRailGroup(json) {
 
   document.getElementById("rs_pos_list").innerHTML = ""
   json["rsPosList"].forEach(pos => {
-    addPos(pos["x"], pos["y"], pos["z"])
+    addRedStonePos(pos["x"], pos["y"], pos["z"])
   })
+
+  document.getElementById("display_pos_list").innerHTML = ""
+  json["displayPosList"].forEach(pos => {
+    addDisplayPos(pos["x"], pos["y"], pos["z"])
+  })
+
+  document.getElementById("next_railgroup_list").innerHTML = ""
+  json["nextRailGroupList"].forEach(uuid => addNextRailGroup(uuid))
 }
 
 function createRailGroup() {
@@ -214,7 +243,7 @@ function addRail() {
   }
   currentRailElems.forEach(currentRailElem => {
     let split = currentRailElem.id.split(",")
-    postData("add", {"uuid": uuid, "x": split[1], "y": split[2], "z": split[3]})
+    postData("add", {"uuid": uuid, "x": split[1], "y": split[2], "z": split[3], "type": 0})
       .then(json => updateRailGroup(json))
   })
   currentRailElems.splice(0)
@@ -223,7 +252,7 @@ function addRail() {
 function removeRail(elem) {
   let split = elem.parentElement.children[0].innerText.split(",")
   let uuid = document.getElementById("rg_uuid").value
-  postData("remove", {"uuid": uuid, "x": split[0], "y": split[1], "z": split[2]})
+  postData("remove", {"uuid": uuid, "x": split[0], "y": split[1], "z": split[2], "type": 0})
     .then(json => updateRailGroup(json))
 }
 
@@ -288,13 +317,22 @@ async function selectRail(elem) {
   }
 }
 
-function addPos(xCoord = "", yCoord = "", zCoord = "") {
+function addRedStonePos(xCoord = "", yCoord = "", zCoord = "") {
   let uuid = document.getElementById("rg_uuid").value
   if (!uuid) {
     return;
   }
   let li = this.createPosElement(xCoord, yCoord, zCoord)
   document.getElementById("rs_pos_list").appendChild(li)
+}
+
+function addDisplayPos(xCoord = "", yCoord = "", zCoord = "") {
+  let uuid = document.getElementById("rg_uuid").value
+  if (!uuid) {
+    return;
+  }
+  let li = this.createPosElement(xCoord, yCoord, zCoord)
+  document.getElementById("display_pos_list").appendChild(li)
 }
 
 function createPosElement(xCoord, yCoord, zCoord) {
@@ -315,7 +353,7 @@ function createPosElement(xCoord, yCoord, zCoord) {
   let button = document.createElement("button")
   button.className = "btn btn-outline-danger ex-button"
   button.innerText = "Remove"
-  button.onclick = e => li.parentElement.id === "rs_pos_list" ? removePos(e.target.parentElement) : li.remove()
+  button.onclick = e => li.parentElement.id === "modal_pos_list" ? li.remove() : removePos(e.target.parentElement, e.target.parentElement.parentElement.id === "rs_pos_list" ? 1 : 2)
   li.appendChild(button)
   return li
 }
@@ -328,7 +366,39 @@ function createPosInputElement(placeholder) {
   return input
 }
 
-function removePos(elem) {
+function addNextRailGroup(nextUuid = "") {
+  let uuid = document.getElementById("rg_uuid").value
+  if (!uuid) {
+    // return;
+  }
+
+  let li = document.createElement("li")
+  li.className = "list-group-item ex-list-item"
+  li.style.display = "block"
+  li.style.height = "100px"
+
+  let div = document.createElement("div")
+  div.innerText = `RailGroup Name:`
+  div.style.marginBottom = "10px"
+  li.appendChild(div)
+
+  let input = document.createElement("input")
+  input.className = "form-control"
+  input.placeholder = "UUID"
+  input.type = "uuid"
+  input.value = nextUuid
+  input.addEventListener("input", e => {
+    if (e.target.value.match("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+      fetchData("railgroup", {"uuid": e.target.value})
+        .then(json => div.innerText = `RailGroup Name: ${json['name']}`)
+    }
+  })
+  li.appendChild(input)
+
+  document.getElementById("next_railgroup_list").appendChild(li)
+}
+
+function removePos(elem, type) {
   let uuid = document.getElementById("rg_uuid").value
   if (!uuid) {
     return;
@@ -338,13 +408,13 @@ function removePos(elem) {
   let y = is[1].value
   let z = is[2].value
   if (x && y && z) {
-    postData("remove", {"uuid": uuid, "x": x, "y": y, "z": z, "rs": true})
+    postData("remove", {"uuid": uuid, "x": x, "y": y, "z": z, "type": type})
   }
   elem.remove()
 }
 
 function filterRailGroup(elem) {
-  let split = !elem.value.replace("　", " ").split(" ")
+  let split = elem.value.replace("　", " ").split(" ")
   Array.from(document.getElementById("rg_list").children)
     .forEach(li => li.classList.toggle("nodisplay", !split.every(s => li.innerText.includes(s))))
 }

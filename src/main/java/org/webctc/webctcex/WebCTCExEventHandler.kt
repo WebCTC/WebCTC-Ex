@@ -2,6 +2,8 @@ package org.webctc.webctcex
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent
 import io.ktor.websocket.*
+import jp.ngt.rtm.RTMBlock
+import net.minecraft.block.Block
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Items
 import net.minecraft.util.ChatComponentText
@@ -19,19 +21,26 @@ class WebCTCExEventHandler {
     @SubscribeEvent
     fun onPlayerInteract(event: PlayerInteractEvent) {
         val player = event.entityPlayer
+        val itemStack = player.heldItem
         if (event.world is WorldServer &&
             event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK &&
-            player.heldItem?.item == Items.stick &&
-            player.heldItem?.isItemEnchanted == true
+            itemStack?.isItemEnchanted == true
         ) {
+            val item = itemStack.item
             thread {
                 val pos = Pos(event.x, event.y, event.z)
-                if (player.heldItem?.displayName == "BlockPosSetter") {
+                if (item == Items.stick && itemStack.displayName == "BlockPosSetter") {
                     RailGroupRouter.blockPosConnection[player.commandSenderName]?.trySendBlockPos(player, pos)
+                } else if (item == Items.blaze_rod && itemStack.displayName == "SignalPosSetter" && event.targetBlock() == RTMBlock.signal) {
+                    RailGroupRouter.signalPosConnection[player.commandSenderName]?.trySendBlockPos(player, pos)
                 }
             }
         }
     }
+}
+
+fun PlayerInteractEvent.targetBlock(): Block {
+    return this.world.getBlock(this.x, this.y, this.z)
 }
 
 fun Connection.trySendBlockPos(player: EntityPlayer, pos: Pos) {
