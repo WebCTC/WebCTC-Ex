@@ -3,6 +3,7 @@ package org.webctc.webctcex
 import cpw.mods.fml.common.eventhandler.SubscribeEvent
 import io.ktor.websocket.*
 import jp.ngt.rtm.RTMBlock
+import jp.ngt.rtm.rail.TileEntityLargeRailBase
 import net.minecraft.block.Block
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Items
@@ -10,10 +11,12 @@ import net.minecraft.util.ChatComponentText
 import net.minecraft.util.EnumChatFormatting
 import net.minecraft.world.WorldServer
 import net.minecraftforge.event.entity.player.PlayerInteractEvent
+import net.minecraftforge.event.world.BlockEvent
 import org.webctc.cache.Pos
 import org.webctc.router.WebCTCRouter
 import org.webctc.webctcex.router.Connection
 import org.webctc.webctcex.router.RailGroupRouter
+import org.webctc.webctcex.utils.RailGroupManager
 import java.util.*
 import kotlin.concurrent.thread
 
@@ -34,6 +37,29 @@ class WebCTCExEventHandler {
                 } else if (item == Items.blaze_rod && itemStack.displayName == "SignalPosSetter" && event.targetBlock() == RTMBlock.signal) {
                     RailGroupRouter.signalPosConnection[player.commandSenderName]?.trySendBlockPos(player, pos)
                 }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    fun onBreakBlock(event: BlockEvent.BreakEvent) {
+        val tile = event.world.getTileEntity(event.x, event.y, event.z)
+        if (tile is TileEntityLargeRailBase) {
+            val core = tile.railCore
+            val pos = Pos(core.xCoord, core.yCoord, core.zCoord)
+            val usedByWebCTC = RailGroupManager.railGroupList.map { it.railPosList }.flatten().any { it == pos }
+            if (usedByWebCTC) {
+                event.player.addChatComponentMessage(
+                    ChatComponentText(
+                        "${EnumChatFormatting.RED}This rail is managed by WebCTC(RailGroup)."
+                    )
+                )
+                event.player.addChatComponentMessage(
+                    ChatComponentText(
+                        "${EnumChatFormatting.RED}If you want to break this rail, first remove it from ${RailGroupManager.railGroupList.filter { it.railPosList.contains(pos) }.map { it.getName() }}."
+                    )
+                )
+                event.isCanceled = true
             }
         }
     }

@@ -53,6 +53,10 @@ class RailGroup {
         this.rsPosList.clear()
     }
 
+    fun getName(): String {
+        return this.name
+    }
+
     fun setName(name: String) {
         this.name = name
     }
